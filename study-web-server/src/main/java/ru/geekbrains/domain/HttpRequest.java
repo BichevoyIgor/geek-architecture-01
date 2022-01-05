@@ -12,11 +12,13 @@ public class HttpRequest {
 
     private final String body;
 
-    public HttpRequest(String method, String url, Map<String, String> headers, String body) {
+    private final String protocol;
+    public HttpRequest(String method, String url, Map<String, String> headers, String protocol, String body) {
         this.method = method;
         this.url = url;
         this.headers = headers;
         this.body = body;
+        this.protocol = protocol;
     }
 
     public String getMethod() {
@@ -33,6 +35,10 @@ public class HttpRequest {
 
     public String getBody() {
         return body;
+    }
+
+    public String getProtocol() {
+        return protocol;
     }
 
     @Override
