@@ -7,7 +7,8 @@ import java.net.Socket;
 public class WebServer {
 
     public static void main(String[] args) {
-        try (ServerSocket serverSocket = new ServerSocket(Config.PORT)) {
+        Config config = new ConfigFile("study-web-server/src/main/resources/config.properties");
+        try (ServerSocket serverSocket = new ServerSocket(config.getPORT())) {
             System.out.println("Server started!");
             RequestParser requestParser = new RequestParser();
 
@@ -15,7 +16,7 @@ public class WebServer {
                 Socket socket = serverSocket.accept();
                 System.out.println("New client connected!");
 
-                new Thread(new RequestHandler(new SocketService(socket), requestParser)).start();
+                new Thread(new RequestHandler(new SocketService(socket), requestParser, config.getWWW())).start();
             }
         } catch (IOException e) {
             e.printStackTrace();

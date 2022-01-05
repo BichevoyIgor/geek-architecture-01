@@ -12,6 +12,7 @@ public class RequestParser {
         String[] firstLine = rawRequest.pollFirst().split(" ");
         String method = firstLine[0];
         String url = firstLine[1];
+        String protocol = firstLine[2];
 
         Map<String, String> headers = new HashMap<>();
         while (!rawRequest.isEmpty()) {
@@ -26,6 +27,6 @@ public class RequestParser {
         while (!rawRequest.isEmpty()) {
             body.append(rawRequest.pollFirst());
         }
-        return new HttpRequest(method, url, headers, body.toString());
+        return new HttpRequest(method, url, headers, protocol, body.toString());
     }
 }
