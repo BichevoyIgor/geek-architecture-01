@@ -1,53 +1,84 @@
 package ru.geekbrains.domain;
 
-import ru.geekbrains.SocketService;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class HttpResponse {
-    private final String protocol;
-    private final String contentType = "Content-Type: text/html; charset=utf-8";
-    private StringBuilder response;
-    private SocketService socketService;
+    private String protocol;
+    private String contentType;
+    private String path;
+    private String message;
+    private StringBuilder body;
 
-    public HttpResponse(SocketService socketService, String protocol) {
-        this.socketService = socketService;
-        this.protocol = protocol;
-        this.response = new StringBuilder();
+    private HttpResponse() {
     }
 
-    public void HttpResponseGet(HttpRequest httpRequest, String www) {
-
-        Path path = Paths.get(www, httpRequest.getUrl());
-
-        if (!Files.exists(path)) {
-            response.append(protocol + " 404 NOT_FOUND\n");
-            response.append(contentType + "\n");
-            response.append("\n");
-            response.append("<h1>Файл не найден!</h1>");
-            socketService.writeResponse(response.toString());
+    @Override
+    public String toString() {
+        if (message == null) {
+            return protocol + contentType + body;
+        } else {
+            return protocol + contentType + message + body;
         }
-
-        response.append(protocol + " 200 OK\n");
-        response.append(contentType + "\n");
-        response.append("\n");
-
-        try {
-            Files.readAllLines(path).forEach(response::append);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
-        socketService.writeResponse(response.toString());
     }
 
-    public void HttpResponseAnotherMethod() {
-        response.append(protocol + " 405 METHOD_NOT_ALLOWED\n");
-        response.append(contentType + "\n");
-        response.append("\n");
-        response.append("<h1>Метод не поддерживается!</h1>");
-        socketService.writeResponse(response.toString());
+    public static class HttpResponseBuilder {
+        private HttpResponse httpResponse;
+        private String path;
+        private Method method = Method.GET;
+
+        public HttpResponseBuilder() {
+            this.httpResponse = new HttpResponse();
+            httpResponse.body = new StringBuilder();
+        }
+
+        public HttpResponseBuilder withProtocol(String protocol) {
+            httpResponse.protocol = protocol;
+            return this;
+        }
+
+        public HttpResponseBuilder withContentType() {
+            httpResponse.contentType = "Content-Type: text/html; charset=utf-8\n\n";
+            return this;
+        }
+
+        public HttpResponseBuilder withMethod(Method method) {
+            this.method = method;
+            return this;
+        }
+
+        public HttpResponseBuilder withPath(String url, String www) {
+            path = www;
+            httpResponse.path = url;
+            return this;
+        }
+
+        public HttpResponse build() {
+            if (httpResponse.protocol.isEmpty()) {
+                httpResponse.protocol = "HTTP/1.1";
+            }
+
+            Path pat = Paths.get(path, httpResponse.path);
+
+            if (!Files.exists(pat)) {
+                httpResponse.protocol = httpResponse.protocol + " 404 NOT_FOUND\n";
+                httpResponse.message = "<h1>Файл не найден!</h1>";
+            } else {
+                if (method.equals(Method.GET)) {
+                    httpResponse.protocol = httpResponse.protocol + " 200 OK\n";
+                    try {
+                        Files.readAllLines(pat).forEach(httpResponse.body::append);
+                    } catch (IOException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }else {
+                    httpResponse.protocol = httpResponse.protocol + " 405 METHOD_NOT_ALLOWED\n";
+                    httpResponse.message = "<h1>Метод не поддерживается!</h1>";
+                }
+            }
+            return this.httpResponse;
+        }
     }
 }
